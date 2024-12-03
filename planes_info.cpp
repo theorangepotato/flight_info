@@ -129,6 +129,11 @@ bool getClosestPlane(PlaneInfo* closest_plane) {
   Serial.println(F("..."));
 
   http_client.begin(api_url);
+
+  #ifdef authenticated_api
+  http_client.setAuthorization(api_username, api_password);
+  #endif
+
   http_client.setTimeout(30000);
   http_client.setConnectTimeout(30000);
 

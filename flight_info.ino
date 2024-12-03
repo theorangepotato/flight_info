@@ -14,6 +14,15 @@ Inkplate display(INKPLATE_1BIT);
 
 RTC_DATA_ATTR bool initial_wake = true;
 
+#ifdef authenticated_api
+const uint64_t requests_per_day = 4000;
+#else
+const uint64_t requests_per_day = 400;
+#endif
+
+const uint64_t micros_per_day = 86400000000;
+const uint64_t micros_between_requests = micros_per_day / requests_per_day;
+
 bool initDevice();
 bool initWifi();
 bool initTime();
@@ -21,6 +30,7 @@ bool wakeUpDevice();
 void setDeviceToSleep();
 void printStartScreen();
 void printPlaneInfo(PlaneInfo * plane_info);
+void getTime(char * out);
 
 void setup() {
   Serial.begin(500000);
@@ -42,10 +52,12 @@ void setup() {
     Serial.println(F("Device set up."));
   }
 
+  Serial.println(requests_per_day);
+  Serial.println(micros_between_requests);
+
   PlaneInfo closest_plane;
 
   if (!getClosestPlane(&closest_plane)) {
-    // TODO: Make this more graceful
     Serial.println(F("ERROR: Failed to get closest plane."));
   } else {
     printPlaneInfo(&closest_plane);
@@ -148,7 +160,7 @@ void setDeviceToSleep() {
   Serial.println(F("Setting device to sleep..."));
   WiFi.setSleep(true);
 
-  esp_sleep_enable_timer_wakeup(1000L * 10000); // 10 seconds
+  esp_sleep_enable_timer_wakeup(micros_between_requests);
   (void)esp_deep_sleep_start();
 }
 
@@ -211,13 +223,8 @@ void printPlaneInfo(PlaneInfo* plane_info) {
   display.setFont(&InterVariable16pt7b);
 
   // Get time
-  setenv("TZ", "PST8PDT,M3.2.0,M11.1.0", 1);
-  tzset();
-  time_t time_sec = time(nullptr);
-  struct tm time_info;
-  localtime_r(&time_sec, &time_info);
   char time_string[25];
-  strftime(time_string, 25, "%I:%M:%S %p, %d %b %Y", &time_info);
+  getTime(time_string);
 
   // Print time
   display.setCursor(cursor_x, cursor_y += delta_y);
@@ -263,4 +270,13 @@ void printPlaneInfo(PlaneInfo* plane_info) {
 
   // Actually display everything on the screen
   display.display();
+}
+
+void getTime(char * out) {
+  setenv("TZ", time_zone_str, 1);
+  tzset();
+  time_t time_sec = time(nullptr);
+  struct tm time_info;
+  localtime_r(&time_sec, &time_info);
+  strftime(out, 25, "%I:%M:%S %p, %d %b %Y", &time_info);
 }
