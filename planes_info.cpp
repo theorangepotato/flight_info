@@ -74,20 +74,63 @@ bool categoryToString(int category, char * out) {
   return false;
 }
 
+bool directionToString(float direction, char * out) {
+  if (direction > 360 || direction < 0) {
+    return false;
+  }
+
+  if (direction > 348.75 || direction <= 11.25) {
+    strcpy(out, "N");
+  } else if (direction > 11.25 || direction <= 33.75) {
+    strcpy(out, "NNE");
+  } else if (direction > 33.75 || direction <= 56.25) {
+    strcpy(out, "NE");
+  } else if (direction > 56.25 || direction <= 78.75) {
+    strcpy(out, "ENE");
+  } else if (direction > 78.75 || direction <= 101.25) {
+    strcpy(out, "E");
+  } else if (direction > 101.25 || direction <= 123.75) {
+    strcpy(out, "ESE");
+  } else if (direction > 123.75 || direction <= 146.25) {
+    strcpy(out, "SE");
+  } else if (direction > 146.25 || direction <= 168.75) {
+    strcpy(out, "SSE");
+  } else if (direction > 168.75 || direction <= 191.25) {
+    strcpy(out, "S");
+  } else if (direction > 191.25 || direction <= 213.75) {
+    strcpy(out, "SSW");
+  } else if (direction > 213.75 || direction <= 236.25) {
+    strcpy(out, "SW");
+  } else if (direction > 236.25 || direction <= 258.75) {
+    strcpy(out, "WSW");
+  } else if (direction > 258.75 || direction <= 281.25) {
+    strcpy(out, "W");
+  } else if (direction > 281.25 || direction <= 303.75) {
+    strcpy(out, "WNW");
+  } else if (direction > 303.75 || direction <= 326.25) {
+    strcpy(out, "NW");
+  } else { // (direction > 326.25 || direction <= 348.75)
+    strcpy(out, "NNW");
+  }
+
+  return true;
+}
+
 bool getClosestPlane(PlaneInfo* closest_plane) {
   HTTPClient http_client;
   http_client.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+  http_client.useHTTP10(true);
 
   char api_url[256];
   sprintf(api_url, "https://opensky-network.org/api/states/all?lamin=%.3f&lomin=%.3f&lamax=%.3f&lomax=%.3f&extended=1", center_latitude - radius_degs, center_longitude - radius_degs, center_latitude + radius_degs, center_longitude + radius_degs);
-
-  // char api_url[] = "https://test.alphahotelbravo.io";
 
   Serial.print(F("Attempting to make API call to: "));
   Serial.print(api_url);
   Serial.println(F("..."));
 
   http_client.begin(api_url);
+  http_client.setTimeout(30000);
+  http_client.setConnectTimeout(30000);
 
   int response_code = http_client.GET();
   if (response_code != 200) {
@@ -107,10 +150,11 @@ bool getClosestPlane(PlaneInfo* closest_plane) {
     return false;
   }
 
-  String output = http_client.getString();
-
+  http_client.getStream().setTimeout(10000);
+  String json_string = http_client.getString();
+  // ReadLoggingStream buffered_stream(http_client.getStream(), Serial);
   JsonDocument json;
-  DeserializationError err = deserializeJson(json, output);
+  DeserializationError err = deserializeJson(json, json_string);
   if (err) {
     Serial.print(F("ERROR: JSON deserialization error: "));
     Serial.println(err.c_str());

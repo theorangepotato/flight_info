@@ -16,6 +16,8 @@ struct PlaneInfo {
 
 bool categoryToString(int category, char * out);
 
+bool directionToString(float direction, char * out);
+
 bool getClosestPlane(PlaneInfo* closest_plane);
 
 #endif // PLANES_INFO_H
