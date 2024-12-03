@@ -205,3 +205,69 @@ bool getClosestPlane(PlaneInfo* closest_plane) {
 
   return true;
 }
+
+bool getPlaneImage(char * icao, PlaneImage * plane_image) {
+    HTTPClient http_client;
+  http_client.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+  http_client.useHTTP10(true);
+
+  char api_url[256];
+  sprintf(api_url, "https://api.planespotters.net/pub/photos/hex/%s", icao);
+
+  Serial.print(F("Attempting to make API call to: "));
+  Serial.print(api_url);
+  Serial.println(F("..."));
+
+  http_client.begin(api_url);
+  http_client.setTimeout(30000);
+  http_client.setConnectTimeout(30000);
+
+  int response_code = http_client.GET();
+  if (response_code != 200) {
+    char response_code_str[3];
+    ltoa(response_code, response_code_str, 10);
+    Serial.print(F("ERROR: Got the following response code: "));
+    Serial.println(response_code);
+    return false;
+  }
+
+  // size can be -1 if the server doesn't send a Content-Length header
+  if (http_client.getSize() < -1 || http_client.getSize() == 0) {
+    char response_size[4];
+    ltoa(http_client.getSize(), response_size, 10);
+    Serial.print(F("ERROR: Response had size: "));
+    Serial.println(response_size);
+    return false;
+  }
+
+  http_client.getStream().setTimeout(10000);
+  String json_string = http_client.getString();
+
+  JsonDocument json;
+  DeserializationError err = deserializeJson(json, json_string);
+  if (err) {
+    Serial.print(F("ERROR: JSON deserialization error: "));
+    Serial.println(err.c_str());
+    Serial.print(F("Free memory: "));
+    Serial.println(esp_get_free_heap_size());
+    return false;
+  }
+
+  const char * error_str = json["error"];
+  if (error_str != nullptr) {
+    Serial.print(F("ERROR: Cannot get plane image. Message: "));
+    Serial.println(error_str);
+    return false;
+  }
+
+  if (json["photos"].size() == 0) {
+    Serial.println(F("WARNING: No plane images found"));
+    return false;
+  }
+
+  strcpy(plane_image->photo_url, json["photos"][0]["thumbnail"]["src"]);
+  plane_image->width = json["photos"][0]["thumbnail"]["size"]["width"];
+  plane_image->height = json["photos"][0]["thumbnail"]["size"]["height"];
+
+  return true;
+}

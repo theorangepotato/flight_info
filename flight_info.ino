@@ -268,6 +268,19 @@ void printPlaneInfo(PlaneInfo* plane_info) {
   display.print(plane_info->vertical_rate);
   display.print(F(" m/s"));
 
+  // Print image of plane
+  /*
+  PlaneImage plane_image;
+  if (getPlaneImage(plane_info->icao, &plane_image)) {
+    Serial.println(F("Drawing image on screen..."));
+    if (!display.drawJpegFromWeb(plane_image.photo_url, 450, 300, true, false)) {
+      Serial.println(F("WARNING: Failed to draw image to screen"));
+      Serial.print(F("Image url: "));
+      Serial.println(plane_image.photo_url);
+    }
+  }
+  */
+
   // Actually display everything on the screen
   display.display();
 }

@@ -14,10 +14,18 @@ struct PlaneInfo {
   int category;
 };
 
+struct PlaneImage {
+  char photo_url[250];
+  int width;
+  int height;
+};
+
 bool categoryToString(int category, char * out);
 
 bool directionToString(float direction, char * out);
 
 bool getClosestPlane(PlaneInfo* closest_plane);
+
+bool getPlaneImage(char * icao, PlaneImage * plane_image);
 
 #endif // PLANES_INFO_H
