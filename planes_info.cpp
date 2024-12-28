@@ -4,6 +4,8 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
+// Get the type of plane, if available.
+// Currently unused.
 bool categoryToString(int category, char * out) {
   switch (category) {
     case 0:
@@ -74,6 +76,7 @@ bool categoryToString(int category, char * out) {
   return false;
 }
 
+// Convert direction in degrees to cardinal direction
 bool directionToString(float direction, char * out) {
   if (direction > 360 || direction < 0) {
     return false;
@@ -116,7 +119,9 @@ bool directionToString(float direction, char * out) {
   return true;
 }
 
+// Connects to the API, parses the result, finds the closest plane to the coordinates, and sets the plane's parameters in `closest_plane`.
 bool getClosestPlane(PlaneInfo* closest_plane) {
+  // Set up client.
   HTTPClient http_client;
   http_client.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
   http_client.useHTTP10(true);
@@ -134,6 +139,7 @@ bool getClosestPlane(PlaneInfo* closest_plane) {
   http_client.setAuthorization(api_username, api_password);
   #endif
 
+  // These parameters can only be set after `begin()` is called.
   http_client.setTimeout(30000);
   http_client.setConnectTimeout(30000);
 
@@ -157,7 +163,6 @@ bool getClosestPlane(PlaneInfo* closest_plane) {
 
   http_client.getStream().setTimeout(10000);
   String json_string = http_client.getString();
-  // ReadLoggingStream buffered_stream(http_client.getStream(), Serial);
   JsonDocument json;
   DeserializationError err = deserializeJson(json, json_string);
   if (err) {
@@ -166,7 +171,6 @@ bool getClosestPlane(PlaneInfo* closest_plane) {
     return false;
   }
 
-  // TODO: Maybe we want to return default information?
   if (json["states"].size() <= 0) {
     Serial.println(F("ERROR: No planes nearby"));
     return false;
