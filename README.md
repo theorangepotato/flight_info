@@ -40,3 +40,7 @@ Planned usage. Would not call API, but provide a QR code link to FlightRadar24.
 `https://www.flightradar24.com/[CALLSIGN]`
 * Link to FlightRadar24 information on the flight
 * Can convert to QR code
+
+## License
+
+This software is available under the GPL 3.0, with the exception of the Inter font files, which are available under the SIL Open Font License 1.1. Please see those files' headers for details.
